@@ -1127,25 +1127,7 @@ async function handleDeviceChange(): Promise<void> {
     state.selectedVideoDeviceId = els.videoDeviceSelect.value || null;
     state.selectedAudioDeviceId = els.audioDeviceSelect.value || null;
 
-    // If video mode is active and not recording, seamlessly switch devices
-    if (state.isVideoMode && !state.isRecording) {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
-            if (state.mediaStream) {
-                state.mediaStream.getTracks().forEach(track => track.stop());
-            }
-            state.mediaStream = stream;
-            els.videoPreview.srcObject = stream;
-            els.videoPreview.muted = true;
-            
-            // Use same mirroring rule (mirror front camera selfie mode)
-            els.videoPreview.style.transform = state.selectedVideoDeviceId ? 'none' : (state.facingMode === 'user' ? 'scaleX(-1)' : 'none');
-            await els.videoPreview.play();
-        } catch (err) {
-            console.error('Failed to switch media device sources:', err);
-            alert('Failed to switch to the selected device.');
-        }
-    }
+    await restartVideoStream();
 
     // Apply microphone changes to whichever microphone-driven mode is active.
     if (state.isListening) {
@@ -1166,9 +1148,32 @@ async function handleDeviceChange(): Promise<void> {
     }
 }
 
+async function restartVideoStream(): Promise<void> {
+    // If video mode is active and not recording, seamlessly switch devices
+    if (state.isVideoMode && !state.isRecording) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
+            if (state.mediaStream) {
+                state.mediaStream.getTracks().forEach(track => track.stop());
+            }
+            state.mediaStream = stream;
+            els.videoPreview.srcObject = stream;
+            els.videoPreview.muted = true;
+            
+            // Use same mirroring rule (mirror front camera selfie mode)
+            els.videoPreview.style.transform = state.selectedVideoDeviceId ? 'none' : (state.facingMode === 'user' ? 'scaleX(-1)' : 'none');
+            await els.videoPreview.play();
+        } catch (err) {
+            console.error('Failed to switch media device sources:', err);
+            alert('Failed to switch to the selected device.');
+        }
+    }
+}
+
 if (!isIOS) {
     els.videoDeviceSelect.addEventListener('change', handleDeviceChange);
     els.audioDeviceSelect.addEventListener('change', handleDeviceChange);
+    els.videoResolutionSelect.addEventListener('change', restartVideoStream);
 }
 
 const permissionRequested = { video: false, audio: false };

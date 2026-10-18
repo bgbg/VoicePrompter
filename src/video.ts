@@ -10,9 +10,11 @@ function applyCameraMirror(): void {
 }
 
 export function getMediaConstraints(): MediaStreamConstraints {
+    // Selected height (720 / 1080 / 2160); 'ideal' lets the browser fall back to the closest mode.
+    const height = Number(els.videoResolutionSelect?.value) || 2160;
     const videoConstraints: any = {
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+        width: { ideal: Math.round(height * 16 / 9) },
+        height: { ideal: height }
     };
     
     if (state.selectedVideoDeviceId) {
@@ -196,10 +198,15 @@ export function startRecording(): void {
         }
     }
 
+    // Browsers default to ~2.5 Mbps whatever the resolution, which makes 1080p/4K look soft.
+    // Scale with the resolution the camera actually delivered (~0.1 bits per pixel per frame).
+    const { width = 1280, height = 720, frameRate = 30 } = state.mediaStream.getVideoTracks()[0]?.getSettings() ?? {};
+    const videoBitsPerSecond = Math.round(width * height * frameRate * 0.1);
+
     try {
         state.mediaRecorder = selectedMimeType
-            ? new MediaRecorder(state.mediaStream, { mimeType: selectedMimeType })
-            : new MediaRecorder(state.mediaStream);
+            ? new MediaRecorder(state.mediaStream, { mimeType: selectedMimeType, videoBitsPerSecond })
+            : new MediaRecorder(state.mediaStream, { videoBitsPerSecond });
     } catch (e) {
         state.mediaRecorder = new MediaRecorder(state.mediaStream);
     }
