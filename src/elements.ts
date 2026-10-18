@@ -47,6 +47,7 @@ export interface Elements {
         right: HTMLElement;
     };
     dirBtns: {
+        auto: HTMLElement;
         ltr: HTMLElement;
         rtl: HTMLElement;
     };
@@ -170,6 +171,7 @@ export function initElements(): void {
             right: document.getElementById('alignRightBtn')!
         },
         dirBtns: {
+            auto: document.getElementById('dirAutoBtn')!,
             ltr: document.getElementById('dirLtrBtn')!,
             rtl: document.getElementById('dirRtlBtn')!
         },
